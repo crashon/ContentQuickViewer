@@ -11,14 +11,14 @@ interface FolderTreeProps {
 }
 
 export default function FolderTree({ currentPath, onPathChange }: FolderTreeProps) {
-  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set(["/Sample Project"]));
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set(["/"]));
 
   const { data: recentFolders } = useQuery({
     queryKey: ["/api/recent-folders"],
   });
 
   const { data: files } = useQuery({
-    queryKey: ["/api/files"],
+    queryKey: ["/api/files", { path: "/" }],
     select: (data: FileEntry[]) => data.filter(file => file.type === "directory"),
   });
 

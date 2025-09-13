@@ -28,73 +28,130 @@ export class MemStorage implements IStorage {
   private initializeSampleData() {
     // Initialize with some sample files for demonstration
     const sampleFiles: InsertFileEntry[] = [
+      // Root folders
       {
-        path: "/Sample Project",
-        name: "Sample Project",
-        type: "directory",
-        lastModified: new Date(Date.now() - 86400000), // 1 day ago
-        parentPath: null,
-        size: null,
-        mimeType: null,
-        isHidden: false,
-      },
-      {
-        path: "/Sample Project/images",
-        name: "images",
+        path: "/Documents",
+        name: "Documents",
         type: "directory",
         lastModified: new Date(Date.now() - 86400000),
-        parentPath: "/Sample Project",
+        parentPath: "/",
         size: null,
         mimeType: null,
         isHidden: false,
       },
       {
-        path: "/Sample Project/images/banner.jpg",
-        name: "banner.jpg",
+        path: "/Media",
+        name: "Media",
+        type: "directory",
+        lastModified: new Date(Date.now() - 86400000),
+        parentPath: "/",
+        size: null,
+        mimeType: null,
+        isHidden: false,
+      },
+      {
+        path: "/Projects",
+        name: "Projects",
+        type: "directory",
+        lastModified: new Date(Date.now() - 86400000),
+        parentPath: "/",
+        size: null,
+        mimeType: null,
+        isHidden: false,
+      },
+      
+      // Documents files
+      {
+        path: "/Documents/readme.txt",
+        name: "readme.txt",
         type: "file",
-        lastModified: new Date(Date.now() - 7200000), // 2 hours ago
-        parentPath: "/Sample Project/images",
-        size: 2457600, // 2.4 MB
+        lastModified: new Date(Date.now() - 3600000),
+        parentPath: "/Documents",
+        size: 2048,
+        mimeType: "text/plain",
+        isHidden: false,
+      },
+      {
+        path: "/Documents/notes.txt",
+        name: "notes.txt",
+        type: "file",
+        lastModified: new Date(Date.now() - 7200000),
+        parentPath: "/Documents",
+        size: 1524,
+        mimeType: "text/plain",
+        isHidden: false,
+      },
+      {
+        path: "/Documents/config.json",
+        name: "config.json",
+        type: "file",
+        lastModified: new Date(Date.now() - 14400000),
+        parentPath: "/Documents",
+        size: 832,
+        mimeType: "application/json",
+        isHidden: false,
+      },
+      
+      // Media files
+      {
+        path: "/Media/sample.jpg",
+        name: "sample.jpg",
+        type: "file",
+        lastModified: new Date(Date.now() - 7200000),
+        parentPath: "/Media",
+        size: 2457600,
         mimeType: "image/jpeg",
         isHidden: false,
       },
       {
-        path: "/Sample Project/app.js",
-        name: "app.js",
+        path: "/Media/video.mp4",
+        name: "video.mp4",
         type: "file",
-        lastModified: new Date(Date.now() - 3600000), // 1 hour ago
-        parentPath: "/Sample Project",
-        size: 15564, // 15.2 KB
-        mimeType: "application/javascript",
-        isHidden: false,
-      },
-      {
-        path: "/Sample Project/demo.mp4",
-        name: "demo.mp4",
-        type: "file",
-        lastModified: new Date(Date.now() - 172800000), // 2 days ago
-        parentPath: "/Sample Project",
-        size: 47923200, // 45.7 MB
+        lastModified: new Date(Date.now() - 172800000),
+        parentPath: "/Media",
+        size: 47923200,
         mimeType: "video/mp4",
         isHidden: false,
       },
       {
-        path: "/Sample Project/background_music.mp3",
-        name: "background_music.mp3",
+        path: "/Media/audio.wav",
+        name: "audio.wav",
         type: "file",
-        lastModified: new Date(Date.now() - 259200000), // 3 days ago
-        parentPath: "/Sample Project",
-        size: 9338880, // 8.9 MB
-        mimeType: "audio/mpeg",
+        lastModified: new Date(Date.now() - 259200000),
+        parentPath: "/Media",
+        size: 9338880,
+        mimeType: "audio/wav",
+        isHidden: false,
+      },
+      
+      // Projects folder and files
+      {
+        path: "/Projects/web-app",
+        name: "web-app",
+        type: "directory",
+        lastModified: new Date(Date.now() - 86400000),
+        parentPath: "/Projects",
+        size: null,
+        mimeType: null,
         isHidden: false,
       },
       {
-        path: "/Sample Project/README.md",
+        path: "/Projects/web-app/app.js",
+        name: "app.js",
+        type: "file",
+        lastModified: new Date(Date.now() - 3600000),
+        parentPath: "/Projects/web-app",
+        size: 15564,
+        mimeType: "application/javascript",
+        isHidden: false,
+      },
+      {
+        path: "/Projects/README.md",
         name: "README.md",
         type: "file",
-        lastModified: new Date(Date.now() - 432000000), // 5 days ago
-        parentPath: "/Sample Project",
-        size: 3174, // 3.1 KB
+        lastModified: new Date(Date.now() - 432000000),
+        parentPath: "/Projects",
+        size: 3174,
         mimeType: "text/markdown",
         isHidden: false,
       },

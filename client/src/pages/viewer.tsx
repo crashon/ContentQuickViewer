@@ -9,7 +9,7 @@ import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import type { FileEntry } from "@shared/schema";
 
 export default function Viewer() {
-  const [currentPath, setCurrentPath] = useState("/Sample Project");
+  const [currentPath, setCurrentPath] = useState("/");
   const [selectedFile, setSelectedFile] = useState<FileEntry | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 

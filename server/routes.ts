@@ -11,7 +11,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/files", async (req, res) => {
     try {
       const { path: dirPath = "/" } = req.query;
+      console.log(`[DEBUG] Getting files for path: "${dirPath}"`);
       const files = await storage.getFilesByPath(dirPath as string);
+      console.log(`[DEBUG] Found ${files.length} files:`, files.map(f => ({ path: f.path, name: f.name, type: f.type, parentPath: f.parentPath })));
       res.json(files);
     } catch (error) {
       console.error("Error getting files:", error);
