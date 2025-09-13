@@ -23,7 +23,7 @@ export default function TextViewer({ file }: TextViewerProps) {
     );
   }
 
-  if (!fileContent || fileContent.type !== 'text') {
+  if (!fileContent || (fileContent as any)?.type !== 'text') {
     return (
       <div className="p-4 text-center text-muted-foreground">
         Unable to load file content
@@ -31,13 +31,13 @@ export default function TextViewer({ file }: TextViewerProps) {
     );
   }
 
-  const content = fileContent.content;
+  const content = (fileContent as any)?.content || '';
   const lines = content.split('\n');
 
   return (
     <ScrollArea className="h-full">
       <div className="font-mono text-sm leading-relaxed p-4 bg-card" data-testid="text-content">
-        {lines.map((line, index) => (
+        {lines.map((line: string, index: number) => (
           <div key={index} className="flex">
             <div className="text-muted-foreground text-right pr-3 select-none w-8 flex-shrink-0">
               {index + 1}

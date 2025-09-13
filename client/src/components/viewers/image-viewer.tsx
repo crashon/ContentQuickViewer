@@ -58,7 +58,7 @@ export default function ImageViewer({ file }: ImageViewerProps) {
     );
   }
 
-  if (!fileContent || fileContent.type !== 'binary') {
+  if (!fileContent || (fileContent as any)?.type !== 'binary') {
     return (
       <div className="p-4 text-center text-muted-foreground">
         Unable to load image
@@ -79,7 +79,7 @@ export default function ImageViewer({ file }: ImageViewerProps) {
       >
         <img
           ref={imgRef}
-          src={fileContent.url}
+          src={(fileContent as any)?.url}
           alt={file.name}
           className="max-w-none transition-transform duration-200"
           style={{

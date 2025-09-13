@@ -106,7 +106,7 @@ export default function VideoViewer({ file }: VideoViewerProps) {
     );
   }
 
-  if (!fileContent || fileContent.type !== 'binary') {
+  if (!fileContent || (fileContent as any)?.type !== 'binary') {
     return (
       <div className="p-4 text-center text-muted-foreground">
         Unable to load video
@@ -124,7 +124,7 @@ export default function VideoViewer({ file }: VideoViewerProps) {
       >
         <video
           ref={videoRef}
-          src={fileContent.url}
+          src={(fileContent as any)?.url}
           className="w-full h-full"
           onClick={togglePlay}
           data-testid="video-element"

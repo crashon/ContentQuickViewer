@@ -100,7 +100,7 @@ export default function AudioViewer({ file }: AudioViewerProps) {
     );
   }
 
-  if (!fileContent || fileContent.type !== 'binary') {
+  if (!fileContent || (fileContent as any)?.type !== 'binary') {
     return (
       <div className="p-4 text-center text-muted-foreground">
         Unable to load audio
@@ -110,7 +110,7 @@ export default function AudioViewer({ file }: AudioViewerProps) {
 
   return (
     <div className="p-4">
-      <audio ref={audioRef} src={fileContent.url} />
+      <audio ref={audioRef} src={(fileContent as any)?.url} />
       
       <div className="text-center mb-4">
         {/* Album Art Placeholder */}

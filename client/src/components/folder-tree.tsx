@@ -107,7 +107,7 @@ export default function FolderTree({ currentPath, onPathChange }: FolderTreeProp
             Recent
           </div>
           
-          {recentFolders && (recentFolders as RecentFolder[]).map((folder) => (
+          {recentFolders && (recentFolders as RecentFolder[]).map((folder: RecentFolder) => (
             <div
               key={folder.path}
               className="flex items-center cursor-pointer p-1 rounded hover:bg-muted transition-colors"
