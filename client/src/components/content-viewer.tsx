@@ -1,17 +1,55 @@
 import { Button } from "@/components/ui/button";
-import { Edit2, ExternalLink, Maximize } from "lucide-react";
+import { Edit2, ExternalLink, Maximize, Download } from "lucide-react";
 import TextViewer from "./viewers/text-viewer";
 import ImageViewer from "./viewers/image-viewer";
 import VideoViewer from "./viewers/video-viewer";
 import AudioViewer from "./viewers/audio-viewer";
 import { getFileIcon, formatFileSize } from "@/lib/file-types";
 import type { FileEntry } from "@shared/schema";
+import { useToast } from "@/hooks/use-toast";
 
 interface ContentViewerProps {
   selectedFile: FileEntry | null;
 }
 
 export default function ContentViewer({ selectedFile }: ContentViewerProps) {
+  const { toast } = useToast();
+
+  const handleDownload = async () => {
+    if (!selectedFile) return;
+
+    try {
+      const response = await fetch(`/api/files/download?path=${encodeURIComponent(selectedFile.path)}`);
+      if (!response.ok) throw new Error('Download failed');
+
+      // Get filename from content-disposition header or use file name
+      const contentDisposition = response.headers.get('content-disposition');
+      const filename = contentDisposition
+        ? contentDisposition.split('filename=')[1].replace(/["']/g, '')
+        : selectedFile.name;
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast({
+        title: 'Download successful',
+        description: `${filename} has been downloaded.`,
+      });
+    } catch (error) {
+      toast({
+        title: 'Download failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
   if (!selectedFile) {
     return (
       <div className="w-full bg-card border-l border-border flex flex-col h-full">

@@ -1,53 +1,10 @@
-import { type FileEntry, type InsertFileEntry, type RecentFolder, type InsertRecentFolder } from "@shared/schema";
-import { randomUUID } from "crypto";
+import { FileSystemStorage } from './filesystem-storage';
+import path from 'path';
+import os from 'os';
 
-export interface IStorage {
-  // File operations
-  getFilesByPath(path: string): Promise<FileEntry[]>;
-  getFileByPath(filePath: string): Promise<FileEntry | undefined>;
-  addFile(file: InsertFileEntry): Promise<FileEntry>;
-  updateFile(id: string, updates: Partial<FileEntry>): Promise<FileEntry>;
-  deleteFile(id: string): Promise<void>;
-  
-  // Recent folders
-  getRecentFolders(): Promise<RecentFolder[]>;
-  addRecentFolder(folder: InsertRecentFolder): Promise<RecentFolder>;
-  updateRecentFolderAccess(path: string): Promise<void>;
-}
-
-export class MemStorage implements IStorage {
-  private files: Map<string, FileEntry>;
-  private recentFolders: Map<string, RecentFolder>;
-
-  constructor() {
-    this.files = new Map();
-    this.recentFolders = new Map();
-    this.initializeSampleData();
-  }
-
-  private initializeSampleData() {
-    // Initialize with some sample files for demonstration
-    const sampleFiles: InsertFileEntry[] = [
-      // Root folders
-      {
-        path: "/Documents",
-        name: "Documents",
-        type: "directory",
-        lastModified: new Date(Date.now() - 86400000),
-        parentPath: "/",
-        size: null,
-        mimeType: null,
-        isHidden: false,
-      },
-      {
-        path: "/Media",
-        name: "Media",
-        type: "directory",
-        lastModified: new Date(Date.now() - 86400000),
-        parentPath: "/",
-        size: null,
-        mimeType: null,
-        isHidden: false,
+// Create storage instance with user's home directory as root
+const rootPath = process.env.CQV_ROOT_PATH || os.homedir();
+export const storage = new FileSystemStorage(rootPath);
       },
       {
         path: "/Projects",

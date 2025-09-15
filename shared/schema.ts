@@ -28,6 +28,62 @@ export const insertFileEntrySchema = createInsertSchema(fileEntries).omit({
 
 export const insertRecentFolderSchema = createInsertSchema(recentFolders).omit({
   id: true,
+});
+
+// Standard API response types
+export interface ApiResponse<T> {
+  status: 'success' | 'error';
+  data?: T;
+  error?: {
+    code: string;
+    message: string;
+    details?: any;
+  };
+  meta?: {
+    page?: number;
+    pageSize?: number;
+    totalItems?: number;
+    totalPages?: number;
+  };
+}
+
+// Helper functions for creating standard responses
+export function successResponse<T>(data: T, meta?: ApiResponse<T>['meta']): ApiResponse<T> {
+  return {
+    status: 'success',
+    data,
+    meta,
+  };
+}
+
+export function errorResponse(
+  code: string,
+  message: string,
+  details?: any
+): ApiResponse<never> {
+  return {
+    status: 'error',
+    error: {
+      code,
+      message,
+      details,
+    },
+  };
+}
+
+// Helper function for handling pagination meta
+export function paginationMeta(
+  page: number,
+  pageSize: number,
+  totalItems: number
+): ApiResponse<any>['meta'] {
+  return {
+    page,
+    pageSize,
+    totalItems,
+    totalPages: Math.ceil(totalItems / pageSize),
+  };
+}
   lastAccessed: true,
 });
 

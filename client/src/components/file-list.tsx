@@ -4,6 +4,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { ArrowUpDown, ArrowUp } from "lucide-react";
 import { getFileIcon, formatFileSize, formatDate } from "@/lib/file-types";
+import { FileUploader } from "@/components/file-uploader";
 import type { FileEntry } from "@shared/schema";
 
 interface FileListProps {

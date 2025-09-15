@@ -2,6 +2,10 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertFileEntrySchema, insertRecentFolderSchema } from "@shared/schema";
+import { validate, preventPathTraversal, validateFileType, validateFileSize } from "./middleware/validation";
+import { rateLimiters } from "./middleware/rate-limit";
+import { corsMiddleware } from "./middleware/cors";
+import { successResponse, errorResponse } from "./utils";
 import path from "path";
 import fs from "fs/promises";
 import mime from "mime-types";
@@ -10,28 +14,132 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get files in a directory
   app.get("/api/files", async (req, res) => {
     try {
-      const { path: dirPath = "/" } = req.query;
+      const { 
+        path: dirPath = "/",
+        page = "1",
+        pageSize = "50",
+        sortBy = "name",
+        sortOrder = "asc"
+      } = req.query;
+
       console.log(`[DEBUG] Getting files for path: "${dirPath}"`);
-      const files = await storage.getFilesByPath(dirPath as string);
-      console.log(`[DEBUG] Found ${files.length} files:`, files.map(f => ({ path: f.path, name: f.name, type: f.type, parentPath: f.parentPath })));
-      res.json(files);
+      
+      // Try to get from cache first
+      let files = await CacheService.getFileList(dirPath as string);
+      
+      if (!files) {
+        files = await storage.getFilesByPath(dirPath as string);
+        // Cache the results
+        await CacheService.setFileList(dirPath as string, files);
+      }
+      
+      const { items, total, page: currentPage, totalPages } = paginateAndSortFiles(files, {
+        page: parseInt(page as string),
+        pageSize: parseInt(pageSize as string),
+        sortBy: sortBy as 'name' | 'size' | 'lastModified',
+        sortOrder: sortOrder as 'asc' | 'desc'
+      });
+
+      res.json(successResponse(items, {
+        page: currentPage,
+        pageSize: parseInt(pageSize as string),
+        totalItems: total,
+        totalPages
+      }));
     } catch (error) {
       console.error("Error getting files:", error);
-      res.status(500).json({ error: "Failed to get files" });
+      res.status(500).json(errorResponse(
+        'FETCH_FILES_ERROR',
+        'Failed to get files',
+        process.env.NODE_ENV === 'development' ? error : undefined
+      ));
     }
   });
 
   // Get file content
-  app.get("/api/files/content", async (req, res) => {
+  // Upload files
+  app.post("/api/files/upload", validatePath, upload.array('files'), async (req, res) => {
+    try {
+      const uploadedFiles = await Promise.all(
+        (req.files as Express.Multer.File[]).map(async (file) => {
+          const fileStats = await fs.stat(file.path);
+          const filePath = path.join(req.query.path as string || '/', file.filename);
+          
+          const fileEntry = {
+            path: filePath,
+            name: file.filename,
+            type: 'file',
+            lastModified: fileStats.mtime,
+            parentPath: req.query.path as string || '/',
+            size: fileStats.size,
+            mimeType: file.mimetype,
+            isHidden: file.filename.startsWith('.')
+          };
+          
+          return await storage.addFile(fileEntry);
+        })
+      );
+      
+      res.json(successResponse(uploadedFiles, {
+        count: uploadedFiles.length
+      }));
+    } catch (error) {
+      console.error("Error uploading files:", error);
+      res.status(500).json(errorResponse(
+        'UPLOAD_FILES_ERROR',
+        'Failed to upload files',
+        process.env.NODE_ENV === 'development' ? error : undefined
+      ));
+    }
+  });
+
+  // Download file
+  app.get("/api/files/download", validatePath, async (req, res) => {
     try {
       const { path: filePath } = req.query;
       if (!filePath) {
-        return res.status(400).json({ error: "File path is required" });
+        return res.status(400).json(errorResponse(
+          'INVALID_REQUEST',
+          'File path is required'
+        ));
       }
 
       const file = await storage.getFileByPath(filePath as string);
       if (!file) {
-        return res.status(404).json({ error: "File not found" });
+        return res.status(404).json(errorResponse(
+          'FILE_NOT_FOUND',
+          'File not found'
+        ));
+      }
+
+      const absolutePath = path.join(process.env.CQV_ROOT_PATH || os.homedir(), filePath as string);
+      res.download(absolutePath, file.name);
+    } catch (error) {
+      console.error("Error downloading file:", error);
+      res.status(500).json(errorResponse(
+        'DOWNLOAD_FILE_ERROR',
+        'Failed to download file',
+        process.env.NODE_ENV === 'development' ? error : undefined
+      ));
+    }
+  });
+
+  app.get("/api/files/content", async (req, res) => {
+    try {
+      const { path: filePath } = req.query;
+      if (!filePath) {
+        return res.status(400).json(errorResponse(
+          'INVALID_REQUEST',
+          'File path is required'
+        ));
+      }
+
+      const file = await storage.getFileByPath(filePath as string);
+      if (!file) {
+        return res.status(404).json(errorResponse(
+          'FILE_NOT_FOUND',
+          'File not found'
+        ));
       }
 
       // For text files, return content as text
@@ -81,44 +189,54 @@ console.log("Hello, world!");
           content = `Sample content for ${file.name}\n\nThis is demonstration content for the Content Quick Viewer application.`;
         }
         
-        res.json({ content, type: 'text' });
+        res.json(successResponse({
+          content,
+          type: 'text'
+        }));
       } else {
         // For binary files, return file info only
-        res.json({ 
+        res.json(successResponse({
           ...file,
           type: 'binary',
           url: `/api/files/binary?path=${encodeURIComponent(file.path)}`
-        });
+        }));
       }
     } catch (error) {
       console.error("Error getting file content:", error);
-      res.status(500).json({ error: "Failed to get file content" });
+      res.status(500).json(errorResponse(
+        'FETCH_CONTENT_ERROR',
+        'Failed to get file content',
+        process.env.NODE_ENV === 'development' ? error : undefined
+      ));
     }
   });
 
-  // Serve binary files (images, videos, audio)
+  // Serve binary files (images, videos, audio) with streaming support
   app.get("/api/files/binary", async (req, res) => {
     try {
       const { path: filePath } = req.query;
       if (!filePath) {
-        return res.status(400).json({ error: "File path is required" });
+        return res.status(400).json(errorResponse(
+          'INVALID_REQUEST',
+          'File path is required'
+        ));
       }
 
       const file = await storage.getFileByPath(filePath as string);
       if (!file) {
-        return res.status(404).json({ error: "File not found" });
+        return res.status(404).json(errorResponse(
+          'FILE_NOT_FOUND',
+          'File not found'
+        ));
       }
 
-      // For demo purposes, redirect to placeholder images/videos
-      if (file.mimeType?.startsWith('image/')) {
-        return res.redirect('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600');
-      } else if (file.mimeType?.startsWith('video/')) {
-        return res.redirect('https://sample-videos.com/zip/10/mp4/720/SampleVideo_1280x720_1mb.mp4');
-      } else if (file.mimeType?.startsWith('audio/')) {
-        return res.redirect('https://www.soundjay.com/misc/beep-07a.mp3');
-      }
-
-      res.status(404).json({ error: "Binary file not found" });
+      const absolutePath = path.join(process.env.CQV_ROOT_PATH || os.homedir(), filePath as string);
+      
+      // Set content type based on file mime type
+      res.setHeader('Content-Type', file.mimeType || 'application/octet-stream');
+      
+      // Stream the file
+      await streamFile(absolutePath, req, res);
     } catch (error) {
       console.error("Error serving binary file:", error);
       res.status(500).json({ error: "Failed to serve binary file" });
